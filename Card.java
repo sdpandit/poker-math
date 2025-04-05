@@ -1,9 +1,10 @@
-public class Card {
-    public static final int SPADES = 0;
-    public static final int HEARTS = 1;
-    public static final int DIAMONDS = 2;
-    public static final int CLUBS = 3;
+public class Card implements Comparable<Card>{
+    public static final int SPADES = 3;
+    public static final int HEARTS = 2;
+    public static final int DIAMONDS = 1;
+    public static final int CLUBS = 0;
 
+    public static final int T = 10;
     public static final int J = 11;
     public static final int Q = 12;
     public static final int K = 13;
@@ -27,6 +28,13 @@ public class Card {
         return this.rank == ((Card) other).rank && this.suit == ((Card) other).suit;
     }
 
+    public int compareTo(Card other) {
+        if (this.rank != other.rank) {
+            return this.rank-other.rank;
+        }
+        return this.suit-other.suit;
+    }
+
     @Override
     public int hashCode() {
         return 4*rank + suit;
@@ -34,9 +42,10 @@ public class Card {
 
     public String toString() {
         String output = "";
-        if (rank <= 10) {
+        if (rank <= 9) {
             output = output + rank;
         }
+        else if (rank == 10) {output = output + "T";}
         else if (rank == J) {output = output + "J";}
         else if (rank == Q) {output = output + "Q";}
         else if (rank == K) {output = output + "K";}
