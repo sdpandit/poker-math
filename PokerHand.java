@@ -35,6 +35,23 @@ public class PokerHand implements Comparable<PokerHand>{
         }
     }
 
+    public static void main(String[] args) {
+        Set<Card> hole1 = new TreeSet<>();
+        Set<Card> hole2 = new TreeSet<>();
+
+        hole1.add(new Card(8, HEARTS));
+        hole1.add(new Card(8, SPADES));
+
+        hole2.add(new Card(J, CLUBS));
+        hole2.add(new Card(T, CLUBS));
+
+        List<Set<Card>> holes = new ArrayList<>();
+        holes.add(hole1);
+        holes.add(hole2);
+
+        System.out.println(playAllHands(hole1, hole2));
+    }
+
     private boolean hasFlush() {
         return suits.size() == 1;
     }
@@ -180,39 +197,36 @@ public class PokerHand implements Comparable<PokerHand>{
         }
     }
 
-    public static void main(String[] args) {
-        Map<String, Integer> results = new TreeMap<>();
-        results.put("Player 1 Wins", 0);
-        results.put("Player 2 Wins", 0);
-        results.put("Splits", 0);
-        for (int i=0; i<100000; i++) {
-            Set<Card> hole1 = new TreeSet<>();
-            hole1.add(new Card(9,SPADES));
-            hole1.add(new Card(T,SPADES));
+    public static double handEquity(Set<Card> hole, int numPlayers, int trials) {
+        if (numPlayers < 2 || hole.size() != 2) {
+            throw new IllegalArgumentException();
+        }
+        double equity = 0;
+        for (int i=0; i<trials; i++) {
+            List<Set<Card>> holeCards = new ArrayList<>();
+            holeCards.add(hole);
+            Set<Card> allCards = new TreeSet<>();
+            for (Card card : hole) {
+                allCards.add(card);
+            }
 
-            Set<Card> hole2 = new TreeSet<>();
-            while (hole2.size() < 2) {
-                Card card = randomCard();
-                if (!hole1.contains(card) && !hole2.contains(card)) {
-                    hole2.add(card);
+            for (int j=0; j<numPlayers-1; j++) {
+                Set<Card> oppHole = new TreeSet<>();
+                while (oppHole.size() < 2) {
+                    Card card = randomCard();
+                    if (!allCards.contains(card)) {
+                        oppHole.add(card);
+                        allCards.add(card);
+                    }
                 }
+                holeCards.add(oppHole);
             }
-            int num = randomHoldEm(hole1, hole2, false);
-            if (num > 0) {
-                // if (printHands) {System.out.print("Player 1 Wins \n");}
-                results.put("Player 1 Wins",results.get("Player 1 Wins")+1);
-            }
-            else if (num < 0) {
-                // if (printHands) {System.out.print("Player 2 Wins \n");}
-                results.put("Player 2 Wins",results.get("Player 2 Wins")+1);
-            }
-            else {
-                // if (printHands) {System.out.print("Chop \n");}
-                // System.out.println(holdEmBest(player1Cards).handRank());
-                results.put("Splits",results.get("Splits")+1);
+            List<Integer> winners = randomHoldEm(holeCards, false);
+            if (winners.contains(0)) {
+                equity+=1.0/winners.size();
             }
         }
-        System.out.println(results);
+        return equity;
     }
 
     // Returns a PokerHand containing the best five card hand out of seven cards
@@ -274,61 +288,20 @@ public class PokerHand implements Comparable<PokerHand>{
         return best;
     }
 
-    // Generates a random Texas Hold Em runout given two input hands
-    public static int randomHoldEm(Set<Card> hole1, Set<Card> hole2, boolean printHands) {
-        Set<Card> player1Cards = new TreeSet<>(hole1);
-        Set<Card> player2Cards = new TreeSet<>(hole2);
-        while (player1Cards.size() < 7) {
-            Card card = randomCard();
-            if (!player1Cards.contains(card) && !player2Cards.contains(card)) {
-                player1Cards.add(card);
-                player2Cards.add(card);
-                if (printHands) {System.out.print(card + " ");}
-            }
-        }
-        if (printHands) {System.out.print("    ");}
-        return holdEmBest(player1Cards).compareTo(holdEmBest(player2Cards));
-    }
-
     // Simulates 10000 random Texas Hold Em runouts between two sets of hole cards
-    public static Map<String, Integer> simHoldEm(Set<Card> hole1, Set<Card> hole2) {
-        return simHoldEm(hole1, hole2, 10000, false);
+    public static Map<Integer, Double> simHoldEm(List<Set<Card>> holeCards) {
+        return simHoldEm(holeCards, 10000, false);
     }
 
-    public static Map<String, Integer> simHoldEm(Set<Card> hole1, Set<Card> hole2, int trials, boolean printHands) {
-        Map<String, Integer> results = new TreeMap<>();
-        results.put("Player 1 Wins", 0);
-        results.put("Player 2 Wins", 0);
-        results.put("Splits", 0);
-
-        if (hole1.size() != 2 || hole2.size() != 2) {
-            throw new IllegalArgumentException();
+    public static Map<Integer, Double> simHoldEm(List<Set<Card>> holeCards, int trials, boolean printHands) {
+        Map<Integer, Double> results = new TreeMap<>();
+        for (int i=0; i<holeCards.size(); i++) {
+            results.put(i,0.0);
         }
         for (int i=0; i<trials; i++) {
-            Set<Card> player1Cards = new TreeSet<>(hole1);
-            Set<Card> player2Cards = new TreeSet<>(hole2);
-            while (player1Cards.size() < 7) {
-                Card card = randomCard();
-                if (!player1Cards.contains(card) && !player2Cards.contains(card)) {
-                    player1Cards.add(card);
-                    player2Cards.add(card);
-                    if (printHands) {System.out.print(card + " ");}
-                }
-            }
-            if (printHands) {System.out.print("    ");}
-            int num = randomHoldEm(hole1, hole2, printHands);
-            if (num > 0) {
-                if (printHands) {System.out.print("Player 1 Wins \n");}
-                results.put("Player 1 Wins",results.get("Player 1 Wins")+1);
-            }
-            else if (num < 0) {
-                if (printHands) {System.out.print("Player 2 Wins \n");}
-                results.put("Player 2 Wins",results.get("Player 2 Wins")+1);
-            }
-            else {
-                if (printHands) {System.out.print("Chop \n");}
-                // System.out.println(holdEmBest(player1Cards).handRank());
-                results.put("Splits",results.get("Splits")+1);
+            List<Integer> winners = randomHoldEm(holeCards, printHands);
+            for (int player : winners) {
+                results.put(player, results.get(player) + 1.0/winners.size());
             }
         }
         return results;
@@ -388,7 +361,7 @@ public class PokerHand implements Comparable<PokerHand>{
         Set<Card> allCards = new TreeSet<>();
         for (Set<Card> s : holeCards) {
             if (s.size() != 2) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("All players must have two hole cards");
             }
             for (Card c : s) {
                 allCards.add(c);
@@ -396,7 +369,7 @@ public class PokerHand implements Comparable<PokerHand>{
         }
 
         if (allCards.size() != 2*holeCards.size()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("All players must have different hole cards");
         }
 
         List<Set<Card>> playerHands = new ArrayList<>();
@@ -420,7 +393,7 @@ public class PokerHand implements Comparable<PokerHand>{
         potWinners.add(0);
 
         for (int i=1; i<playerHands.size(); i++) {
-            int num = holdEmBest(playerHands.get(i)).compareTo(holdEmBest(playerHands.get(i-1)));
+            int num = holdEmBest(playerHands.get(i)).compareTo(holdEmBest(playerHands.get(potWinners.get(0))));
             if (num > 0) {
                 potWinners.clear();
                 potWinners.add(i);
