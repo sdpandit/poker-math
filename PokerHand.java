@@ -39,16 +39,17 @@ public class PokerHand implements Comparable<PokerHand>{
         Set<Card> hole1 = new TreeSet<>();
         Set<Card> hole2 = new TreeSet<>();
 
-        hole1.add(new Card(8, HEARTS));
-        hole1.add(new Card(8, SPADES));
+        hole1.add(new Card(2, HEARTS));
+        hole1.add(new Card(3, DIAMONDS));
 
-        hole2.add(new Card(J, CLUBS));
-        hole2.add(new Card(T, CLUBS));
+        hole2.add(new Card(2, DIAMONDS));
+        hole2.add(new Card(3, HEARTS));
 
         List<Set<Card>> holes = new ArrayList<>();
         holes.add(hole1);
         holes.add(hole2);
-
+        
+        System.out.println(simHoldEm(holes, 100, false));
         System.out.println(playAllHands(hole1, hole2));
     }
 
@@ -294,12 +295,18 @@ public class PokerHand implements Comparable<PokerHand>{
     }
 
     public static Map<Integer, Double> simHoldEm(List<Set<Card>> holeCards, int trials, boolean printHands) {
+        if (holeCards.isEmpty()) {
+            throw new IllegalArgumentException("You must have some players!");
+        }
         Map<Integer, Double> results = new TreeMap<>();
         for (int i=0; i<holeCards.size(); i++) {
             results.put(i,0.0);
         }
         for (int i=0; i<trials; i++) {
             List<Integer> winners = randomHoldEm(holeCards, printHands);
+            if (printHands) {
+                System.out.print(winners + "\n");
+            }
             for (int player : winners) {
                 results.put(player, results.get(player) + 1.0/winners.size());
             }
@@ -308,6 +315,9 @@ public class PokerHand implements Comparable<PokerHand>{
     }
 
     public static Map<String,Integer> playAllHands(Set<Card> hole1, Set<Card> hole2) {
+        if (hole1.size() != 2 || hole2.size() != 2) {
+            throw new IllegalArgumentException("Both players must have two hole cards");
+        }
         Map<String, Integer> results = new TreeMap<>();
         results.put("Player 1 Wins", 0);
         results.put("Player 2 Wins", 0);
@@ -388,7 +398,6 @@ public class PokerHand implements Comparable<PokerHand>{
                 if (printHands) {System.out.print(card + " ");}
             }
         }
-        if (printHands) {System.out.print("    ");}
         List<Integer> potWinners = new ArrayList<>();
         potWinners.add(0);
 
