@@ -1,3 +1,5 @@
 Card.class
 PokerHand.class
 PokerHand$Pair.class
+Deck.class
+PokerMath.class

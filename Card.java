@@ -1,14 +1,4 @@
 public class Card implements Comparable<Card>{
-    public static final int SPADES = 3;
-    public static final int HEARTS = 2;
-    public static final int DIAMONDS = 1;
-    public static final int CLUBS = 0;
-
-    public static final int T = 10;
-    public static final int J = 11;
-    public static final int Q = 12;
-    public static final int K = 13;
-    public static final int A = 14;
 
     public int rank;
     public int suit;
@@ -46,15 +36,15 @@ public class Card implements Comparable<Card>{
             output = output + rank;
         }
         else if (rank == 10) {output = output + "T";}
-        else if (rank == J) {output = output + "J";}
-        else if (rank == Q) {output = output + "Q";}
-        else if (rank == K) {output = output + "K";}
-        else if (rank == A) {output = output + "A";}
+        else if (rank == 11) {output = output + "J";}
+        else if (rank == 12) {output = output + "Q";}
+        else if (rank == 13) {output = output + "K";}
+        else if (rank == 13) {output = output + "A";}
 
-        if (suit == SPADES) {output = output + "S";}
-        if (suit == HEARTS) {output = output + "H";}
-        if (suit == DIAMONDS) {output = output + "D";}
-        if (suit == CLUBS) {output = output + "C";}
+        if (suit == 3) {output = output + "S";}
+        if (suit == 2) {output = output + "H";}
+        if (suit == 1) {output = output + "D";}
+        if (suit == 0) {output = output + "C";}
 
         return output;
     }
