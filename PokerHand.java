@@ -112,29 +112,29 @@ public class PokerHand implements Comparable<PokerHand>{
         if (r1 != r2) {
             return r1 - r2;
         }
-        PriorityQueue<Pair> thisQueue = new PriorityQueue<>();
-        PriorityQueue<Pair> otherQueue = new PriorityQueue<>();
+        PriorityQueue<RankQuantPair> thisQueue = new PriorityQueue<>();
+        PriorityQueue<RankQuantPair> otherQueue = new PriorityQueue<>();
         for (int rank : this.ranks.keySet()) {
             // handle the wheel case
             if (rank == 14 && (r1 == 4 || r1 == 8) && this.ranks.containsKey(5)) {
-                thisQueue.add(new Pair(1,1));
+                thisQueue.add(new RankQuantPair(1,1));
             }
             else {
-                thisQueue.add(new Pair(rank, this.ranks.get(rank)));
+                thisQueue.add(new RankQuantPair(rank, this.ranks.get(rank)));
             }
         }
         for (int rank : other.ranks.keySet()) {
             // handle the wheel case
             if (rank == 14 && (r2 == 4 || r2 == 8) && other.ranks.containsKey(5)) {
-                otherQueue.add(new Pair(1,1));
+                otherQueue.add(new RankQuantPair(1,1));
             }
             else {
-                otherQueue.add(new Pair(rank, other.ranks.get(rank)));
+                otherQueue.add(new RankQuantPair(rank, other.ranks.get(rank)));
             }
         }
         while (!thisQueue.isEmpty() && !otherQueue.isEmpty()) {
-            Pair a = thisQueue.remove();
-            Pair b = otherQueue.remove();
+            RankQuantPair a = thisQueue.remove();
+            RankQuantPair b = otherQueue.remove();
             if (a.rank != b.rank) {
                 return a.rank - b.rank;
             }
@@ -142,15 +142,15 @@ public class PokerHand implements Comparable<PokerHand>{
         return 0;
     }
 
-    private class Pair implements Comparable<Pair> {
+    private class RankQuantPair implements Comparable<RankQuantPair> {
         int rank, quant;
     
-        private Pair(int rank, int quant) {
+        private RankQuantPair(int rank, int quant) {
             this.rank = rank;
             this.quant = quant;
         }
     
-        public int compareTo(Pair other) {
+        public int compareTo(RankQuantPair other) {
             if (this.quant != other.quant) {
                 return -(this.quant - other.quant);
             }

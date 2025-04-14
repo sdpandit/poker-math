@@ -39,7 +39,7 @@ public class Card implements Comparable<Card>{
         else if (rank == 11) {output = output + "J";}
         else if (rank == 12) {output = output + "Q";}
         else if (rank == 13) {output = output + "K";}
-        else if (rank == 13) {output = output + "A";}
+        else if (rank == 14) {output = output + "A";}
 
         if (suit == 3) {output = output + "S";}
         if (suit == 2) {output = output + "H";}

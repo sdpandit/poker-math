@@ -1,5 +1,6 @@
 Card.class
 PokerHand.class
-PokerHand$Pair.class
+PokerHand$RankQuantPair.class
 Deck.class
 PokerMath.class
+BotTest.class

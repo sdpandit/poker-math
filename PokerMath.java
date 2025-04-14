@@ -1,4 +1,6 @@
 import java.util.*;
+import java.io.PrintStream;
+import java.io.FileNotFoundException;
 
 public class PokerMath {
     public static final int SPADES = 3;
@@ -11,21 +13,18 @@ public class PokerMath {
     public static final int Q = 12;
     public static final int K = 13;
     public static final int A = 14;
-    public static void main(String[] args) {
-        Map<Integer, Integer> results = new TreeMap<>();
-        for (int i=0; i<10; i++) {
-            results.put(i,0);
-        }
-        for (int i=0; i<100000; i++) {
-            Deck deck = new Deck();
-            Set<Card> cards = new TreeSet<>();
-            for (int j=0; j<7; j++) {
-                cards.add(deck.drawRandomCard());
+    public static void main(String[] args) throws FileNotFoundException {
+        PrintStream ps = new PrintStream("equity.txt");
+        for (int i=2; i<=14; i++) {
+            for (int j=2; j<=14; j++) {
+                Set<Card> h = new TreeSet<>();
+                h.add(new Card(i, HEARTS));
+                if (i <= j) {h.add(new Card(j, SPADES));}
+                else {h.add(new Card(j, HEARTS));}
+                ps.println(h + " " + handEquity(h, 6, 13333)/13333.0);
             }
-            int num = holdEmBest(cards).handRank();
-            results.put(num,results.get(num)+1);
         }
-        System.out.println(results);
+        ps.close();
     }
 
     public static double handEquity(Set<Card> hole, int numPlayers, int trials) {
