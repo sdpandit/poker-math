@@ -107,6 +107,9 @@ public class PokerHand implements Comparable<PokerHand>{
 
     @Override
     public int compareTo(PokerHand other) {
+        if (other == null) {
+            return 1;
+        }
         int r1 = this.handRank();
         int r2 = other.handRank();
         if (r1 != r2) {

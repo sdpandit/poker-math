@@ -1,6 +1,4 @@
 import java.util.*;
-import java.io.PrintStream;
-import java.io.FileNotFoundException;
 
 public class PokerMath {
     public static final int SPADES = 3;
@@ -13,40 +11,38 @@ public class PokerMath {
     public static final int Q = 12;
     public static final int K = 13;
     public static final int A = 14;
-    public static void main(String[] args) throws FileNotFoundException {
-        PrintStream ps = new PrintStream("equity.txt");
+    public static void main(String[] args) {
         for (int i=2; i<=14; i++) {
             for (int j=2; j<=14; j++) {
                 Set<Card> h = new TreeSet<>();
                 h.add(new Card(i, HEARTS));
                 if (i <= j) {h.add(new Card(j, SPADES));}
                 else {h.add(new Card(j, HEARTS));}
-                ps.println(h + " " + handEquity(h, 6, 13333)/13333.0);
+                System.out.println(h + " " + handEquity(h, 6, 1000)/1000.0);
             }
         }
-        ps.close();
     }
 
-    public static double handEquity(Set<Card> hole, int numPlayers, int trials) {
-        if (numPlayers < 2 || hole.size() != 2) {
+    public static double handEquity(Set<Card> hand, int numPlayers, int trials) {
+        if (numPlayers < 2 || hand.size() != 2) {
             throw new IllegalArgumentException();
         }
         double equity = 0;
         for (int i=0; i<trials; i++) {
             Deck deck = new Deck();
-            for (Card c : hole) {
+            for (Card c : hand) {
                 deck.removeCard(c);
             }
-            List<Set<Card>> holeCards = new ArrayList<>();
-            holeCards.add(hole);
+            List<Set<Card>> playerHands = new ArrayList<>();
+            playerHands.add(hand);
 
             for (int j=0; j<numPlayers-1; j++) {
-                Set<Card> oppHole = new TreeSet<>();
-                oppHole.add(deck.drawRandomCard());
-                oppHole.add(deck.drawRandomCard());
-                holeCards.add(oppHole);
+                Set<Card> oppHand = new TreeSet<>();
+                oppHand.add(deck.dealRandomCard());
+                oppHand.add(deck.dealRandomCard());
+                playerHands.add(oppHand);
             }
-            List<Integer> winners = randomHoldEm(holeCards, false);
+            List<Integer> winners = randomHoldEm(playerHands, false);
             if (winners.contains(0)) {
                 equity+=1.0/winners.size();
             }
@@ -79,56 +75,58 @@ public class PokerMath {
         return best;
     }
 
-    public static PokerHand omahaBest (Set<Card> hole, Set<Card> community) {
-        if (hole.size() != 4 || community.size() != 5) {
-            throw new IllegalArgumentException();
-        }
+    public static List<Integer> holdEmWinners(List<Set<Card>> playerHands, Set<Card> community) {
+        List<Integer> potWinners = new ArrayList<>();
         PokerHand best = null;
-        for (int a=0; a<4; a++) {
-            for (int b=a+1; b<4; b++) {
-                for (int c=0; c<5; c++) {
-                    for (int d=c+1; d<5; d++) {
-                        Set<Card> s = new TreeSet<>();
-                        int i=0;
-                        for (Card card : hole) {
-                            if (i != a && i != b) {
-                                s.add(card);
-                            }
-                            i++;
-                        }
-                        i=0;
-                        for (Card card : community) {
-                            if (i != c && i != d) {
-                                s.add(card);
-                            }
-                            i++;
-                        }
-                        PokerHand candidate = new PokerHand(s);
-                        if (best == null || candidate.compareTo(best) > 0) {
-                            best = candidate;
-                        }
-                    }
+        for (int i=0; i<playerHands.size(); i++) {
+            Set<Card> s = new TreeSet<>(playerHands.get(i));
+            for (Card c : community) {
+                s.add(c);
+            }
+            PokerHand candidate = holdEmBest(s);
+            int num  = candidate.compareTo(best);
+            if (num > 0) {
+                potWinners.clear();
+                potWinners.add(i);
+                best = candidate;
+            }
+            else if (num == 0) {
+                potWinners.add(i);
+            }
+        }
+        return potWinners;
+    }
+
+    public static List<Integer> randomHoldEm(List<Set<Card>> playerHands, boolean printHands) {
+        Deck deck = new Deck();
+        for (Set<Card> s : playerHands) {
+            if (s.size() != 2) {
+                throw new IllegalArgumentException("All players must have two hole cards");
+            }
+            for (Card c : s) {
+                if (deck.removeCard(c) == false) {
+                    throw new IllegalArgumentException("All players must have different hole cards");
                 }
             }
         }
-        return best;
+
+        Set<Card> community = new TreeSet<>();
+
+        for (int i=0; i<5; i++) {community.add(deck.dealRandomCard());}
+        
+        return holdEmWinners(playerHands, community);
     }
 
-    // Simulates 10000 random Texas Hold Em runouts between two sets of hole cards
-    public static Map<Integer, Double> simHoldEm(List<Set<Card>> holeCards) {
-        return simHoldEm(holeCards, 10000, false);
-    }
-
-    public static Map<Integer, Double> simHoldEm(List<Set<Card>> holeCards, int trials, boolean printHands) {
-        if (holeCards.isEmpty()) {
+    public static Map<Integer, Double> simHoldEm(List<Set<Card>> playerHands, int trials, boolean printHands) {
+        if (playerHands.isEmpty()) {
             throw new IllegalArgumentException("You must have some players!");
         }
         Map<Integer, Double> results = new TreeMap<>();
-        for (int i=0; i<holeCards.size(); i++) {
+        for (int i=0; i<playerHands.size(); i++) {
             results.put(i,0.0);
         }
         for (int i=0; i<trials; i++) {
-            List<Integer> winners = randomHoldEm(holeCards, printHands);
+            List<Integer> winners = randomHoldEm(playerHands, printHands);
             if (printHands) {
                 System.out.print(winners + "\n");
             }
@@ -190,44 +188,5 @@ public class PokerMath {
             }
         }
         return results;
-    }
-
-    public static List<Integer> randomHoldEm(List<Set<Card>> holeCards, boolean printHands) {
-        Deck deck = new Deck();
-        List<Set<Card>> playerHands = new ArrayList<>();
-        for (Set<Card> s : holeCards) {
-            if (s.size() != 2) {
-                throw new IllegalArgumentException("All players must have two hole cards");
-            }
-            for (Card c : s) {
-                if (deck.removeCard(c) == false) {
-                    throw new IllegalArgumentException("All players must have different hole cards");
-                }
-            }
-            playerHands.add(new TreeSet<Card>(s));
-        }
-
-        for (int i=0; i<5; i++) {
-            Card card = deck.drawRandomCard();
-            for (Set<Card> s : playerHands) {
-                s.add(card);
-            }
-            if (printHands) {System.out.print(card + " ");}
-        }
-        List<Integer> potWinners = new ArrayList<>();
-        potWinners.add(0);
-
-        for (int i=1; i<playerHands.size(); i++) {
-            int num = holdEmBest(playerHands.get(i)).compareTo(holdEmBest(playerHands.get(potWinners.get(0))));
-            if (num > 0) {
-                potWinners.clear();
-                potWinners.add(i);
-            }
-            else if (num == 0) {
-                potWinners.add(i);
-            }
-        }
-
-        return potWinners;
     }
 }

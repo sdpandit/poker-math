@@ -16,7 +16,7 @@ public class Deck {
         return remainingCards.size();
     }
 
-    public Card drawRandomCard() {
+    public Card dealRandomCard() {
         if (remainingCards.size() == 0) {
             throw new NoSuchElementException("No cards left in the deck");
         }

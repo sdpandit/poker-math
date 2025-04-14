@@ -4,3 +4,4 @@ PokerHand$RankQuantPair.class
 Deck.class
 PokerMath.class
 BotTest.class
+Player.class
