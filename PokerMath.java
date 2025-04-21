@@ -11,16 +11,15 @@ public class PokerMath {
     public static final int Q = 12;
     public static final int K = 13;
     public static final int A = 14;
+
     public static void main(String[] args) {
-        for (int i=2; i<=14; i++) {
-            for (int j=2; j<=14; j++) {
-                Set<Card> h = new TreeSet<>();
-                h.add(new Card(i, HEARTS));
-                if (i <= j) {h.add(new Card(j, SPADES));}
-                else {h.add(new Card(j, HEARTS));}
-                System.out.println(h + " " + handEquity(h, 6, 1000)/1000.0);
-            }
-        }
+        Set<Card> hole1 = new TreeSet<>();
+        Set<Card> hole2 = new TreeSet<>();
+        hole1.add(new Card(J, SPADES));
+        hole1.add(new Card(T, SPADES));
+        hole2.add(new Card(2, HEARTS));
+        hole2.add(new Card(2, CLUBS));
+        System.out.println(playAllHands(hole1, hole2));
     }
 
     public static double handEquity(Set<Card> hand, int numPlayers, int trials) {
@@ -28,8 +27,9 @@ public class PokerMath {
             throw new IllegalArgumentException();
         }
         double equity = 0;
+        Deck deck = new Deck();
         for (int i=0; i<trials; i++) {
-            Deck deck = new Deck();
+            deck.reset();
             for (Card c : hand) {
                 deck.removeCard(c);
             }
@@ -76,6 +76,9 @@ public class PokerMath {
     }
 
     public static List<Integer> holdEmWinners(List<Set<Card>> playerHands, Set<Card> community) {
+        if (playerHands.isEmpty()) {
+            throw new IllegalArgumentException("You must have some players!");
+        }
         List<Integer> potWinners = new ArrayList<>();
         PokerHand best = null;
         for (int i=0; i<playerHands.size(); i++) {
@@ -98,13 +101,16 @@ public class PokerMath {
     }
 
     public static List<Integer> randomHoldEm(List<Set<Card>> playerHands, boolean printHands) {
+        if (playerHands.isEmpty()) {
+            throw new IllegalArgumentException("You must have some players!");
+        }
         Deck deck = new Deck();
         for (Set<Card> s : playerHands) {
             if (s.size() != 2) {
                 throw new IllegalArgumentException("All players must have two hole cards");
             }
             for (Card c : s) {
-                if (deck.removeCard(c) == false) {
+                if (deck.removeCard(c) == null) {
                     throw new IllegalArgumentException("All players must have different hole cards");
                 }
             }
@@ -138,55 +144,54 @@ public class PokerMath {
     }
 
     public static Map<String,Integer> playAllHands(Set<Card> hole1, Set<Card> hole2) {
-        if (hole1.size() != 2 || hole2.size() != 2) {
-            throw new IllegalArgumentException("Both players must have two hole cards");
-        }
         Map<String, Integer> results = new TreeMap<>();
-        results.put("Player 1 Wins", 0);
-        results.put("Player 2 Wins", 0);
-        results.put("Splits", 0);
-        List<Card> cardList = new ArrayList<>();
-        for (int i=8; i<60; i++) {
-            cardList.add(new Card(i/4, i%4));
-        }
-        for (Card card : hole1) {
-            cardList.remove(card);
-        }
-        for (Card card : hole2) {
-            cardList.remove(card);
-        }
+        results.put("P1", 0);
+        results.put("P2", 0);
+        results.put("SP", 0);
+        Deck deck = new Deck();
+        for (Card card : hole1) {deck.removeCard(card);}
+        for (Card card : hole2) {deck.removeCard(card);}
+        int[] arr = {0,1,2,3,4};
         int i=0;
-        for (int a=0; a<cardList.size(); a++) {
-            for (int b=a+1; b<cardList.size(); b++) {
-                for (int c=b+1; c<cardList.size(); c++) {
-                    for (int d=c+1; d<cardList.size(); d++) {
-                        for (int e=d+1; e<cardList.size(); e++) {
-                            if (i%100000==0) {
-                                System.out.println(i);
-                            }
-                            Set<Card> player1Cards = new TreeSet<>(hole1);
-                            Set<Card> player2Cards = new TreeSet<>(hole2);
-                            int[] arr = {a,b,c,d,e};
-                            for (int x : arr) {
-                                player1Cards.add(cardList.get(x));
-                                player2Cards.add(cardList.get(x));
-                            }
-                            int num = holdEmBest(player1Cards).compareTo(holdEmBest(player2Cards));
-                            if (num > 0) {
-                                results.put("Player 1 Wins",results.get("Player 1 Wins")+1);
-                            }
-                            else if (num < 0) {
-                                results.put("Player 2 Wins",results.get("Player 2 Wins")+1);
-                            }
-                            else {
-                                results.put("Splits",results.get("Splits")+1);
-                            }
-                            i++;
-                        }
-                    }
-                }
+        do {
+            if (i%100000 == 0) {System.out.println(i);}
+            Set<Card> player1Cards = new TreeSet<>(hole1);
+            Set<Card> player2Cards = new TreeSet<>(hole2);
+            for (int x : arr) {
+                Card c = deck.getCardAtPosition(x);
+                player1Cards.add(c);
+                player2Cards.add(c);
             }
-        }
+            int num = holdEmBest(player1Cards).compareTo(holdEmBest(player2Cards));
+            if (num > 0) {
+                results.put("P1",results.get("P1")+1);
+            }
+            else if (num < 0) {
+                results.put("P2",results.get("P2")+1);
+            }
+            else {
+                results.put("SP",results.get("SP")+1);
+            }
+            i++;
+            increment(arr, 48);
+        } while (arr[4] != 4);
         return results;
+    }
+
+    private static void increment(int[] arr, int max) {
+        int i = arr.length - 1;
+        while (i >= 0 && arr[i] == max + i - arr.length) {
+            i--;
+        }
+        if (i == -1) {
+            for (int j=0; j<arr.length; j++) {
+                arr[j] = j;
+            }
+            return;
+        }
+        arr[i]++;
+        for (int j=i+1; j<arr.length; j++) {
+            arr[j] = arr[i] + (j-i);
+        }
     }
 }

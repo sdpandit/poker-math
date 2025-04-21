@@ -1,7 +1,7 @@
 Card.class
+Deck.class
+Game.class
+Player.class
 PokerHand.class
 PokerHand$RankQuantPair.class
-Deck.class
 PokerMath.class
-BotTest.class
-Player.class
