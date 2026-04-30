@@ -1,4 +1,9 @@
-public class Card implements Comparable<Card>{
+public class Card implements Comparable<Card> {
+
+    private static final String[] RANKS = 
+        {"", "", "2", "3", "4", "5", "6",
+        "7", "8", "9", "T", "J", "Q", "K", "A"};
+    private static final String[] SUITS = {"c", "d", "h", "s"};
 
     public int rank;
     public int suit;
@@ -13,16 +18,16 @@ public class Card implements Comparable<Card>{
 
     @Override
     public boolean equals(Object other) {
-        if (this == other) {return true;}
-        if (!(other instanceof Card)) {return false;}
-        return this.rank == ((Card) other).rank && this.suit == ((Card) other).suit;
+        if (this == other) return true;
+        if (!(other instanceof Card)) return false;
+        Card c = (Card) other;
+        return this.rank == c.rank
+            && this.suit == c.suit;
     }
 
     public int compareTo(Card other) {
-        if (this.rank != other.rank) {
-            return this.rank-other.rank;
-        }
-        return this.suit-other.suit;
+        // i hope this doesn't break anything
+        return this.hashCode() - other.hashCode();
     }
 
     @Override
@@ -31,21 +36,6 @@ public class Card implements Comparable<Card>{
     }
 
     public String toString() {
-        String output = "";
-        if (rank <= 9) {
-            output = output + rank;
-        }
-        else if (rank == 10) {output = output + "T";}
-        else if (rank == 11) {output = output + "J";}
-        else if (rank == 12) {output = output + "Q";}
-        else if (rank == 13) {output = output + "K";}
-        else if (rank == 14) {output = output + "A";}
-
-        if (suit == 3) {output = output + "s";}
-        if (suit == 2) {output = output + "h";}
-        if (suit == 1) {output = output + "d";}
-        if (suit == 0) {output = output + "c";}
-
-        return output;
+        return RANKS[rank] + SUITS[suit];
     }
 }

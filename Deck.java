@@ -1,26 +1,26 @@
 import java.util.*;
 
 public class Deck {
-    private List<Card> remainingCards;
+    private List<Card> deck;
     private Random r;
 
     public Deck() {
-        this.remainingCards = new ArrayList<>();
+        this.deck = new ArrayList<>();
         for (int i=8; i<60; i++) {
-            remainingCards.add(new Card(i/4, i%4));
+            deck.add(new Card(i/4, i%4));
         }
         r = new Random();
     }
 
     public int deckSize() {
-        return remainingCards.size();
+        return deck.size();
     }
 
     public Card dealRandomCard() {
-        if (remainingCards.size() == 0) {
+        if (deck.isEmpty()) {
             throw new NoSuchElementException("No cards left in the deck");
         }
-        return remainingCards.remove(r.nextInt(this.deckSize()));
+        return deck.remove(r.nextInt(this.deckSize()));
     }
 
     public Card removeCard(int rank, int suit) {
@@ -28,23 +28,27 @@ public class Deck {
     }
 
     public Card removeCard(Card c) {
-        if (!remainingCards.remove(c)) {
+        if (!deck.remove(c)) {
             return null;
         }
         return c;
+    }
+
+    public void removeAll(Set<Card> s) {
+        for (Card c : s) {this.removeCard(c);}
     }
 
     public Card getCardAtPosition(int i) {
         if (i >= this.deckSize()) {
             throw new IllegalArgumentException("Not enough cards");
         }
-        return remainingCards.get(i);
+        return deck.get(i);
     }
 
     public void reset() {
-        remainingCards.clear();
+        deck.clear();
         for (int i=8; i<60; i++) {
-            remainingCards.add(new Card(i/4, i%4));
+            deck.add(new Card(i/4, i%4));
         }
     }
 }

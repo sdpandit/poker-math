@@ -13,60 +13,73 @@ public class PokerMath {
     public static final int A = 14;
 
     public static void main(String[] args) {
-        Set<Card> hole1 = new TreeSet<>();
-        Set<Card> hole2 = new TreeSet<>();
-        hole1.add(new Card(J, SPADES));
-        hole1.add(new Card(T, SPADES));
-        hole2.add(new Card(2, HEARTS));
-        hole2.add(new Card(2, CLUBS));
-        System.out.println(playAllHands(hole1, hole2));
+        Card[] hole1 = new Card[2];
+        hole1[0] = new Card(A, HEARTS);
+        hole1[1] = new Card(K, CLUBS);
+        Card[] hole2 = new Card[2];
+        hole2[0] = new Card(Q, HEARTS);
+        hole2[1] = new Card(Q, DIAMONDS);
+        List<Card[]> hands = new ArrayList<>();
+        hands.add(hole1);
+        hands.add(hole2);
+        System.out.println(playAllHands(hands));
     }
 
-    public static double handEquity(Set<Card> hand, int numPlayers, int trials) {
-        if (numPlayers < 2 || hand.size() != 2) {
+    // Equity
+    public static double equity(Card[] holeCards, int numPlayers, int trials) {
+        if (numPlayers < 2 || holeCards.length != 2) {
             throw new IllegalArgumentException();
         }
-        double equity = 0;
+        double eq = 0;
         Deck deck = new Deck();
         for (int i=0; i<trials; i++) {
             deck.reset();
-            for (Card c : hand) {
+            for (Card c : holeCards) {
                 deck.removeCard(c);
             }
-            List<Set<Card>> playerHands = new ArrayList<>();
-            playerHands.add(hand);
+            List<Card[]> holeList = new ArrayList<>();
+            holeList.add(holeCards);
 
-            for (int j=0; j<numPlayers-1; j++) {
-                Set<Card> oppHand = new TreeSet<>();
-                oppHand.add(deck.dealRandomCard());
-                oppHand.add(deck.dealRandomCard());
-                playerHands.add(oppHand);
+            for (int j = 1; j<numPlayers; j++) {
+                Card[] oppHole = new Card[2];
+                oppHole[0] = deck.dealRandomCard();
+                oppHole[1] = deck.dealRandomCard();
+                holeList.add(oppHole);
             }
-            List<Integer> winners = randomHoldEm(playerHands, false);
+            List<Integer> winners = randomHoldEm(holeList, false);
             if (winners.contains(0)) {
-                equity+=1.0/winners.size();
+                eq+=1.0/winners.size();
             }
         }
-        return equity;
+        return eq/trials;
     }
 
-    // Returns a PokerHand containing the best five card hand out of seven cards
-    public static PokerHand holdEmBest(Set<Card> hand) {
-        if (hand.size() != 7) {
+    // Returns the best five card poker hand among the player
+    // hole cards and community cards
+    public static PokerHand holdEmBest(Card[] holeCards, Card[] board) {
+        if (holeCards.length != 2 || board.length != 5) {
             throw new IllegalArgumentException();
         }
+        Card[] pool = new Card[7];
+        for (int i=0; i<2; i++) {
+            pool[i] = holeCards[i];
+        }
+        for (int i=2; i<7; i++) {
+            pool[i] = board[i-2];
+        }
+
         PokerHand best = null;
         for (int a=0; a<7; a++) {
             for (int b=a+1; b<7; b++) {
-                Set<Card> s = new TreeSet<>();
+                Set<Card> hand = new TreeSet<>();
                 int i=0;
-                for (Card card : hand) {
+                for (Card card : pool) {
                     if (i != a && i != b) {
-                        s.add(card);
+                        hand.add(card);
                     }
                     i++;
                 }
-                PokerHand candidate = new PokerHand(s);
+                PokerHand candidate = new PokerHand(hand);
                 if (best == null || candidate.compareTo(best) > 0) {
                     best = candidate;
                 }
@@ -75,18 +88,17 @@ public class PokerMath {
         return best;
     }
 
-    public static List<Integer> holdEmWinners(List<Set<Card>> playerHands, Set<Card> community) {
-        if (playerHands.isEmpty()) {
+    // Returns a list of all pot winners given the players'
+    // hole cards and the board run-out
+    public static List<Integer> holdEmWinners
+        (List<Card[]> holeList, Card[] board, boolean printHands) {
+        if (holeList.isEmpty()) {
             throw new IllegalArgumentException("You must have some players!");
         }
         List<Integer> potWinners = new ArrayList<>();
         PokerHand best = null;
-        for (int i=0; i<playerHands.size(); i++) {
-            Set<Card> s = new TreeSet<>(playerHands.get(i));
-            for (Card c : community) {
-                s.add(c);
-            }
-            PokerHand candidate = holdEmBest(s);
+        for (int i=0; i<holeList.size(); i++) {
+            PokerHand candidate = holdEmBest(holeList.get(i), board);
             int num  = candidate.compareTo(best);
             if (num > 0) {
                 potWinners.clear();
@@ -97,16 +109,18 @@ public class PokerMath {
                 potWinners.add(i);
             }
         }
+        if (printHands) {System.out.println(board + " " + potWinners);}
         return potWinners;
     }
 
-    public static List<Integer> randomHoldEm(List<Set<Card>> playerHands, boolean printHands) {
-        if (playerHands.isEmpty()) {
+    // Generates a random board run-out and returns the winners
+    public static List<Integer> randomHoldEm(List<Card[]> holeList, boolean printHands) {
+        if (holeList.isEmpty()) {
             throw new IllegalArgumentException("You must have some players!");
         }
         Deck deck = new Deck();
-        for (Set<Card> s : playerHands) {
-            if (s.size() != 2) {
+        for (Card[] s : holeList) {
+            if (s.length != 2) {
                 throw new IllegalArgumentException("All players must have two hole cards");
             }
             for (Card c : s) {
@@ -116,69 +130,84 @@ public class PokerMath {
             }
         }
 
-        Set<Card> community = new TreeSet<>();
+        Card[] board = new Card[5];
 
-        for (int i=0; i<5; i++) {community.add(deck.dealRandomCard());}
-        
-        return holdEmWinners(playerHands, community);
+        for (int i=0; i<5; i++) {
+            board[i] = deck.dealRandomCard();
+        }
+        return holdEmWinners(holeList, board, printHands);
     }
 
-    public static Map<Integer, Double> simHoldEm(List<Set<Card>> playerHands, int trials, boolean printHands) {
-        if (playerHands.isEmpty()) {
+    // Simulates multiple random hands
+    public static Map<Integer, Double> simHoldEm(List<Card[]> holeList, int trials,
+        boolean separateSplits, boolean printHands) {
+        if (holeList.isEmpty()) {
             throw new IllegalArgumentException("You must have some players!");
         }
         Map<Integer, Double> results = new TreeMap<>();
-        for (int i=0; i<playerHands.size(); i++) {
+        for (int i=0; i<holeList.size(); i++) {
             results.put(i,0.0);
         }
+        if (separateSplits) {results.put(-1, 0.0);}
         for (int i=0; i<trials; i++) {
-            List<Integer> winners = randomHoldEm(playerHands, printHands);
-            if (printHands) {
-                System.out.print(winners + "\n");
+            List<Integer> winners = randomHoldEm(holeList, printHands);
+            if (separateSplits && winners.size() > 1) {
+                results.put(-1, results.get(-1) + 1);
             }
-            for (int player : winners) {
-                results.put(player, results.get(player) + 1.0/winners.size());
-            }
+            else {
+                for (int player : winners) {
+                    results.put(player, results.get(player) + 1.0/winners.size());   
+                }
+            }    
         }
         return results;
     }
 
-    public static Map<String,Integer> playAllHands(Set<Card> hole1, Set<Card> hole2) {
-        Map<String, Integer> results = new TreeMap<>();
-        results.put("P1", 0);
-        results.put("P2", 0);
-        results.put("SP", 0);
+    // Simulates every possible board run-out for the given
+    // set of hole cards
+    public static Map<Integer, Integer> playAllHands(List<Card[]> holeList) {
+        if (holeList.isEmpty()) {
+            throw new IllegalArgumentException("You must have some players!");
+        }
+        Map<Integer, Integer> results = new TreeMap<>();
         Deck deck = new Deck();
-        for (Card card : hole1) {deck.removeCard(card);}
-        for (Card card : hole2) {deck.removeCard(card);}
+        for (Card[] s : holeList) {
+            if (s.length != 2) {
+                throw new IllegalArgumentException("All players must have two hole cards");
+            }
+            for (Card card : s) {
+                if (deck.removeCard(card) == null) {
+                    throw new IllegalArgumentException("All players must have different hole cards");
+                }
+            }
+            results.put(results.size(), 0);
+        }
+        results.put(-1, 0);
+        int size = deck.deckSize();
         int[] arr = {0,1,2,3,4};
         int i=0;
         do {
             if (i%100000 == 0) {System.out.println(i);}
-            Set<Card> player1Cards = new TreeSet<>(hole1);
-            Set<Card> player2Cards = new TreeSet<>(hole2);
-            for (int x : arr) {
-                Card c = deck.getCardAtPosition(x);
-                player1Cards.add(c);
-                player2Cards.add(c);
+            Card[] board = new Card[5];
+            for (int j=0; j<arr.length; j++) {
+                board[j] = deck.getCardAtPosition(arr[j]);
             }
-            int num = holdEmBest(player1Cards).compareTo(holdEmBest(player2Cards));
-            if (num > 0) {
-                results.put("P1",results.get("P1")+1);
-            }
-            else if (num < 0) {
-                results.put("P2",results.get("P2")+1);
+            List<Integer> winners = holdEmWinners(holeList, board, false);
+            if (winners.size() == 1) {
+                int winner = winners.get(0);
+                results.put(winner, results.get(winner) + 1);
             }
             else {
-                results.put("SP",results.get("SP")+1);
+                results.put(-1, results.get(-1) + 1);
             }
             i++;
-            increment(arr, 48);
+            incrementArray(arr, size);
         } while (arr[4] != 4);
         return results;
     }
 
-    private static void increment(int[] arr, int max) {
+    // Helper method for playAllHands
+    private static void incrementArray(int[] arr, int max) {
         int i = arr.length - 1;
         while (i >= 0 && arr[i] == max + i - arr.length) {
             i--;

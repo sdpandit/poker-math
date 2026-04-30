@@ -2,9 +2,10 @@ import java.util.*;
 
 public class PokerHand implements Comparable<PokerHand>{
 
-    private Set<Card> hand;
+    public Set<Card> hand;
     private Map<Integer,Integer> ranks;
     private Map<Integer,Integer> suits;
+    private int ranking;
 
     public PokerHand(Set<Card> hand) {
         if (hand.size() != 5) {
@@ -14,15 +15,12 @@ public class PokerHand implements Comparable<PokerHand>{
         this.ranks = new TreeMap<>();
         this.suits = new TreeMap<>();
         for (Card c : hand) {
-            if (!ranks.containsKey(c.rank)) {
-                ranks.put(c.rank,0);
-            }
-            if (!suits.containsKey(c.suit)) {
-                suits.put(c.suit,0);
-            }
+            ranks.putIfAbsent(c.rank, 0);
+            suits.putIfAbsent(c.suit, 0);
             ranks.put(c.rank,ranks.get(c.rank)+1);
             suits.put(c.suit,suits.get(c.suit)+1);
         }
+        this.ranking = computeRanking();
     }
 
     private boolean hasFlush() {
@@ -35,19 +33,26 @@ public class PokerHand implements Comparable<PokerHand>{
         }
         // check for wheel
         if (ranks.containsKey(14) && ranks.containsKey(2) && ranks.containsKey(3)
-        && ranks.containsKey(4) && ranks.containsKey(5)) {
+            && ranks.containsKey(4) && ranks.containsKey(5)) {
             return true;
         }
         return false;
     }
 
     // returns the rank of a hand
-    public int handRank() {
-        if (hasStraight() && hasFlush() && setMin(ranks.keySet()) == 10) {
+    public int handRanking() {
+        return this.ranking;
+    }
+
+    // computes the rank of a hand
+    private int computeRanking() {
+        boolean straight = hasStraight();
+        boolean flush = hasFlush();
+        if (straight && flush && setMin(ranks.keySet()) == 10) {
             // royal flush
             return 9;
         }
-        if (hasStraight() && hasFlush()) {
+        if (straight && flush) {
             // straight flush
             return 8;
         }
@@ -59,11 +64,11 @@ public class PokerHand implements Comparable<PokerHand>{
             // full house
             return 6;
         }
-        if (hasFlush()) {
+        if (flush) {
             // flush
             return 5;
         }
-        if (hasStraight()) {
+        if (straight) {
             // straight
             return 4;
         }
@@ -80,7 +85,7 @@ public class PokerHand implements Comparable<PokerHand>{
             return 1;
         }
         else {
-            // nothing
+            // high card
             return 0;
         }
     }
@@ -88,9 +93,7 @@ public class PokerHand implements Comparable<PokerHand>{
     private int setMin(Collection<Integer> s) {
         int min = Integer.MAX_VALUE;
         for (int x : s) {
-            if (x < min) {
-                min = x;
-            }
+            min = Math.min(x, min);
         }
         return min;
     }
@@ -98,9 +101,7 @@ public class PokerHand implements Comparable<PokerHand>{
     private int setMax(Collection<Integer> s) {
         int max = Integer.MIN_VALUE;
         for (int x : s) {
-            if (x > max) {
-                max = x;
-            }
+            max = Math.max(x, max);
         }
         return max;
     }
@@ -110,34 +111,16 @@ public class PokerHand implements Comparable<PokerHand>{
         if (other == null) {
             return 1;
         }
-        int r1 = this.handRank();
-        int r2 = other.handRank();
+        int r1 = this.ranking;
+        int r2 = other.ranking;
         if (r1 != r2) {
             return r1 - r2;
         }
-        PriorityQueue<RankQuantPair> thisQueue = new PriorityQueue<>();
-        PriorityQueue<RankQuantPair> otherQueue = new PriorityQueue<>();
-        for (int rank : this.ranks.keySet()) {
-            // handle the wheel case
-            if (rank == 14 && (r1 == 4 || r1 == 8) && this.ranks.containsKey(5)) {
-                thisQueue.add(new RankQuantPair(1,1));
-            }
-            else {
-                thisQueue.add(new RankQuantPair(rank, this.ranks.get(rank)));
-            }
-        }
-        for (int rank : other.ranks.keySet()) {
-            // handle the wheel case
-            if (rank == 14 && (r2 == 4 || r2 == 8) && other.ranks.containsKey(5)) {
-                otherQueue.add(new RankQuantPair(1,1));
-            }
-            else {
-                otherQueue.add(new RankQuantPair(rank, other.ranks.get(rank)));
-            }
-        }
+        PriorityQueue<Pair> thisQueue = this.handQueue();
+        PriorityQueue<Pair> otherQueue = other.handQueue();
         while (!thisQueue.isEmpty() && !otherQueue.isEmpty()) {
-            RankQuantPair a = thisQueue.remove();
-            RankQuantPair b = otherQueue.remove();
+            Pair a = thisQueue.remove();
+            Pair b = otherQueue.remove();
             if (a.rank != b.rank) {
                 return a.rank - b.rank;
             }
@@ -145,15 +128,29 @@ public class PokerHand implements Comparable<PokerHand>{
         return 0;
     }
 
-    private class RankQuantPair implements Comparable<RankQuantPair> {
+    private PriorityQueue<Pair> handQueue() {
+        PriorityQueue<Pair> pq = new PriorityQueue<>();
+        int hr = this.handRanking();
+        for (int rank : this.ranks.keySet()) {
+            // handle wheel
+            if (rank == 14 && (hr == 4 || hr == 8) && this.ranks.containsKey(5)) {
+                pq.add(new Pair(1,1));
+            } else {
+                pq.add(new Pair(rank, this.ranks.get(rank)));
+            }
+        }
+        return pq;
+    }
+
+    private class Pair implements Comparable<Pair> {
         int rank, quant;
     
-        private RankQuantPair(int rank, int quant) {
+        private Pair(int rank, int quant) {
             this.rank = rank;
             this.quant = quant;
         }
     
-        public int compareTo(RankQuantPair other) {
+        public int compareTo(Pair other) {
             if (this.quant != other.quant) {
                 return -(this.quant - other.quant);
             }
