@@ -15,14 +15,18 @@ public class PokerMath {
     public static void main(String[] args) {
         Card[] hole1 = new Card[2];
         hole1[0] = new Card(A, HEARTS);
-        hole1[1] = new Card(K, CLUBS);
-        Card[] hole2 = new Card[2];
-        hole2[0] = new Card(Q, HEARTS);
-        hole2[1] = new Card(Q, DIAMONDS);
-        List<Card[]> hands = new ArrayList<>();
-        hands.add(hole1);
-        hands.add(hole2);
-        System.out.println(playAllHands(hands));
+        hole1[1] = new Card(A, SPADES);
+        // Card[] hole2 = new Card[2];
+        // hole2[0] = new Card(A, CLUBS);
+        // hole2[1] = new Card(9, HEARTS);
+        // List<Card[]> hands = new ArrayList<>();
+        // hands.add(hole1);
+        // hands.add(hole2);
+        // System.out.println(simHoldEm(hands, 100, true, true));
+        long t1 = System.currentTimeMillis();
+        System.out.println(equity(hole1, 4, 100000));
+        long t2 = System.currentTimeMillis();
+        System.out.println(t2-t1);
     }
 
     // Equity
@@ -71,11 +75,13 @@ public class PokerMath {
         PokerHand best = null;
         for (int a=0; a<7; a++) {
             for (int b=a+1; b<7; b++) {
-                Set<Card> hand = new TreeSet<>();
+                Card[] hand = new Card[5];
                 int i=0;
+                int idx=0;
                 for (Card card : pool) {
                     if (i != a && i != b) {
-                        hand.add(card);
+                        hand[idx] = card;
+                        idx++;
                     }
                     i++;
                 }
@@ -109,7 +115,9 @@ public class PokerMath {
                 potWinners.add(i);
             }
         }
-        if (printHands) {System.out.println(board + " " + potWinners);}
+        if (printHands) {
+            System.out.println(Arrays.toString(board) + " " + potWinners);
+        }
         return potWinners;
     }
 
@@ -183,12 +191,13 @@ public class PokerMath {
             results.put(results.size(), 0);
         }
         results.put(-1, 0);
+
+        Card[] board = new Card[5];
         int size = deck.deckSize();
         int[] arr = {0,1,2,3,4};
         int i=0;
         do {
             if (i%100000 == 0) {System.out.println(i);}
-            Card[] board = new Card[5];
             for (int j=0; j<arr.length; j++) {
                 board[j] = deck.getCardAtPosition(arr[j]);
             }

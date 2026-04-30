@@ -1,4 +1,4 @@
-public class Card implements Comparable<Card> {
+public class Card {
 
     private static final String[] RANKS = 
         {"", "", "2", "3", "4", "5", "6",
@@ -10,7 +10,7 @@ public class Card implements Comparable<Card> {
 
     public Card(int rank, int suit) {
         if (rank < 2 || rank > 14 || suit < 0 || suit > 3) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("invalid card");
         }
         this.rank = rank;
         this.suit = suit;
@@ -23,11 +23,6 @@ public class Card implements Comparable<Card> {
         Card c = (Card) other;
         return this.rank == c.rank
             && this.suit == c.suit;
-    }
-
-    public int compareTo(Card other) {
-        // i hope this doesn't break anything
-        return this.hashCode() - other.hashCode();
     }
 
     @Override

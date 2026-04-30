@@ -17,10 +17,7 @@ public class Deck {
     }
 
     public Card dealRandomCard() {
-        if (deck.isEmpty()) {
-            throw new NoSuchElementException("No cards left in the deck");
-        }
-        return deck.remove(r.nextInt(this.deckSize()));
+        return deck.remove(r.nextInt(deck.size()));
     }
 
     public Card removeCard(int rank, int suit) {
